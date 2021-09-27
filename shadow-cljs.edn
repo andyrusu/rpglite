@@ -1,0 +1,44 @@
+;; shadow-cljs configuration
+{:source-paths
+ ["src/build"
+  "src/editor"
+  "src/game"
+  "src/common"
+  "src/test"]
+
+ :dependencies
+ [[reagent "1.1.0"]]
+
+ :dev-http {8080 "public"}
+
+ :open-file-command ["code" "-g" :file ":" :line ":" :column]
+
+ :builds
+ {:game {:target :browser
+         :output-dir "platforms/browser/www/js"
+         :asset-path "/js"
+         :modules {:common {:entries []}
+                   :index {:entries [rpglite.index]
+                           :init-fn rpglite.index/init
+                           :depends-on #{:common}}}
+         :build-hooks [(rpglite.cordova/hook)]
+         :compiler-options {:optimizations :simple
+                            :warnings-as-errors true}
+         :devtools {:before-load rpglite.index/stop
+                    :after-load rpglite.index/start}
+         :repl-init-ns rpglite.index
+         :repl-pprint true}
+  :editor {:target :browser
+           :output-dir "public/js"
+           :asset-path "/js"
+           :modules {:common {:entries []}
+                     :index {:entries [editor.index]
+                             :init-fn editor.index/init-once
+                             :depends-on #{:common}}}
+           :compiler-options {:optimizations :simple
+                              :warnings-as-errors true}
+           :devtools {:before-load editor.index/stop
+                      :after-load editor.index/start
+                      :open-file-command ["code" "-g" :file ":" :line ":" :column]}
+           :repl-init-ns editor.index
+           :repl-pprint true}}}
