@@ -1,13 +1,19 @@
 (ns editor.pages.login
   (:require
    [react :refer (useState)]
+   ["react-router-dom" :refer (useHistory useLocation)]
    [common.forms :refer (get-val-from-event)]
-   [common.auth :refer (login-with-remember)]))
+   [common.auth :refer (login-with-remember)]
+   [common.hooks :refer (useAuth)]))
 
 (defn show []
   (let [[email set-email] (useState nil)
         [pass set-pass] (useState nil)
-        [rem set-rem] (useState false)]
+        [rem set-rem] (useState false)
+        auth (useAuth)
+        history (useHistory)
+        location (useLocation)
+        from (.-from (or (.-state location) #js {:from {:pathname "/"}}))]
     [:section {:class "hero is-primary is-fullheight"}
      [:div.hero-body
       [:div.container
@@ -46,5 +52,7 @@
            [:button {:class "button is-success"
                      :on-click (fn [e]
                                  (login-with-remember email pass rem)
+                                 ((:update auth))
+                                 (.replace history from)
                                  (.preventDefault e))}
             "Login"]]]]]]]]))
