@@ -2,15 +2,13 @@
   (:require
    [react :refer (useState)]
    ["react-router-dom" :refer (useHistory useLocation)]
-   [common.forms :refer (get-val-from-event)]
-   [common.auth :refer (login-with-remember)]
-   [common.hooks :refer (useAuth)]))
+   [common.auth :refer (with-email-password with-persistance)]
+   [common.forms :refer (get-val-from-event)]))
 
 (defn show []
   (let [[email set-email] (useState nil)
         [pass set-pass] (useState nil)
         [rem set-rem] (useState false)
-        auth (useAuth)
         history (useHistory)
         location (useLocation)
         from (.-from (or (.-state location) #js {:from {:pathname "/"}}))]
@@ -51,8 +49,8 @@
           [:div.field
            [:button {:class "button is-success"
                      :on-click (fn [e]
-                                 (login-with-remember email pass rem)
-                                 ((:update auth))
-                                 (.replace history from)
+                                 (let [redir (fn [_] (.goBack history))
+                                       login (fn [] (with-email-password email pass redir))]
+                                   (login))
                                  (.preventDefault e))}
             "Login"]]]]]]]]))

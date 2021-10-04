@@ -11,33 +11,66 @@
   (not (nil? (get-current-user))))
 
 (defn initOnAuthStateChanged
-  []
-  (onAuthStateChanged (getAuth) (fn [user] (js/console.log (if user "User logged in" "User logged out")))))
+  ([]
+   (initOnAuthStateChanged nil))
+  ([handler]
+   (onAuthStateChanged
+    (getAuth)
+    (if handler
+      handler
+      (fn [user] (js/console.log (if user "User logged in" "User logged out")))))))
 
-(defn login
-  [auth email password]
-  (signInWithEmailAndPassword auth email password))
-
-(defn logout []
-  (signOut (getAuth)))
-
-(defn with-catch
-  ([auth do-login]
-   (with-catch auth do-login nil))
-  ([auth do-login do-catch]
-   (let [when-do #(when do-catch (.catch % do-catch))]
-     (-> (do-login auth)
-         (when-do)))))
+(defn with-email-password
+  ([email password]
+   (signInWithEmailAndPassword (getAuth) email password))
+  ([email password then-fn]
+   (.then (with-email-password email password) then-fn))
+  ([auth email password then-fn]
+   (.then (signInWithEmailAndPassword auth email password) then-fn))
+  ([auth email password then-fn catch-fn]
+   (-> (signInWithEmailAndPassword auth email password)
+       (.then then-fn)
+       (.catch catch-fn))))
 
 (defn with-persistance
-  [auth persist do-login do-catch]
-  (-> auth
-      (setPersistence persist)
-      (.then do-login)
-      (.catch do-catch)))
+  ([then-fn]
+   (with-persistance (getAuth) browserSessionPersistence then-fn))
+  ([persist then-fn]
+   (with-persistance (getAuth) persist then-fn))
+  ([auth persist then-fn]
+   (.then (setPersistence auth persist) then-fn))
+  ([auth persist then-fn catch-fn]
+   (-> (setPersistence auth persist)
+       (.then then-fn)
+       (.catch catch-fn))))
 
-(defn login-with-remember
-  [email pass rem]
-  (let [auth (getAuth)
-        with-remember (if rem (partial with-persistance auth browserSessionPersistence) (partial with-catch auth))]
-    (with-remember #(login auth email pass) #(js/console.log (.-message %)))))
+(defn logout
+  ([]
+   (signOut (getAuth)))
+  ([then-fn]
+   (.then (signOut (getAuth)) then-fn))
+  ([then-fn catch-fn]
+   (-> (signOut (getAuth))
+       (.then then-fn)
+       (.catch catch-fn))))
+
+;; (defn with-catch
+;;   ([auth do-login]
+;;    (with-catch auth do-login nil))
+;;   ([auth do-login do-catch]
+;;    (let [when-do #(when do-catch (.catch % do-catch))]
+;;      (-> (do-login auth)
+;;          (when-do)))))
+
+;; (defn with-persistance
+;;   [auth persist do-login do-catch]
+;;   (-> auth
+;;       (setPersistence persist)
+;;       (.then do-login)
+;;       (.catch do-catch)))
+
+;; (defn login-with-remember
+;;   [email pass rem]
+;;   (let [auth (getAuth)
+;;         with-remember (if rem (partial with-persistance auth browserSessionPersistence) (partial with-catch auth))]
+;;     (with-remember #(login auth email pass) #(js/console.log (.-message %)))))
