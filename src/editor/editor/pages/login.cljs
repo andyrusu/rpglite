@@ -3,15 +3,19 @@
    [react :refer (useState)]
    ["react-router-dom" :refer (useHistory useLocation)]
    [common.auth :refer (with-email-password with-persistance)]
+   [common.hooks :refer (auth-context useAuth)]
    [common.forms :refer (get-val-from-event)]))
 
-(defn show []
+(defn show
+  ^{:context-type auth-context}
+  []
   (let [[email set-email] (useState nil)
         [pass set-pass] (useState nil)
         [rem set-rem] (useState false)
         history (useHistory)
         location (useLocation)
         from (.-from (or (.-state location) #js {:from {:pathname "/"}}))]
+    (js/console.log (.-state location))
     [:section {:class "hero is-primary is-fullheight"}
      [:div.hero-body
       [:div.container
@@ -49,8 +53,10 @@
           [:div.field
            [:button {:class "button is-success"
                      :on-click (fn [e]
-                                 (let [redir (fn [_] (.goBack history))
+                                 (let [redir (fn [_] (.replace history from))
                                        login (fn [] (with-email-password email pass redir))]
-                                   (login))
+                                   (if rem
+                                     (with-persistance login)
+                                     (login)))
                                  (.preventDefault e))}
             "Login"]]]]]]]]))
