@@ -2,18 +2,20 @@
   (:require
    [react :refer (useState)]
    ["react-router-dom" :refer (useHistory useLocation)]
-   [common.forms :refer (get-val-from-event)]
-   [common.auth :refer (login-with-remember)]
-   [common.hooks :refer (useAuth)]))
+   [common.auth :refer (with-email-password with-persistance)]
+   [common.hooks :refer (auth-context useAuth)]
+   [common.forms :refer (get-val-from-event)]))
 
-(defn show []
+(defn show
+  ^{:context-type auth-context}
+  []
   (let [[email set-email] (useState nil)
         [pass set-pass] (useState nil)
         [rem set-rem] (useState false)
-        auth (useAuth)
         history (useHistory)
         location (useLocation)
         from (.-from (or (.-state location) #js {:from {:pathname "/"}}))]
+    (js/console.log (.-state location))
     [:section {:class "hero is-primary is-fullheight"}
      [:div.hero-body
       [:div.container
@@ -51,8 +53,10 @@
           [:div.field
            [:button {:class "button is-success"
                      :on-click (fn [e]
-                                 (login-with-remember email pass rem)
-                                 ((:update auth))
-                                 (.replace history from)
+                                 (let [redir (fn [_] (.replace history from))
+                                       login (fn [] (with-email-password email pass redir))]
+                                   (if rem
+                                     (with-persistance login)
+                                     (login)))
                                  (.preventDefault e))}
             "Login"]]]]]]]]))
