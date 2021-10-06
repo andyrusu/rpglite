@@ -4,7 +4,7 @@
    [reagent.core :as r]
    [common.auth :as a]))
 
-(def auth-context (createContext))
+(defonce auth-context (createContext))
 (def auth-provider (.-Provider auth-context))
 ;;(def auth-consumer (.-consumer auth-context))
 
@@ -29,9 +29,7 @@
                    (set-signedin (a/is-signedin?)))}))
 
 (defn ProvideAuth
-  [options]
-  (let [auth (useProvideAuth)
-        this (r/current-component)]
-    (js/console.log this)
-    [:f> auth-provider {:value auth}
-     [(.-children options)]]))
+  [children]
+  (let [auth (useProvideAuth)]
+    [:> auth-provider {:value auth}
+     children]))
